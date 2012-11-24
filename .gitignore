@@ -1,0 +1,14 @@
+ipch/*
+*/Debug/*
+*/ARM/*
+*/ipch/*
+*/Generated Files/*
+*/Bin/*
+*/PerfLogs/*
+*/obj/*
+*.sdf
+*.bak
+*.suo
+*.opensdf
+*.user
+*.pfx
