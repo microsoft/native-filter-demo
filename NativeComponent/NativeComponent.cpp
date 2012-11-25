@@ -31,7 +31,7 @@ void WindowsPhoneRuntimeComponent::NewViewfinderFrame( Platform::WriteOnlyArray<
 	ConvertToGrayNeon(frameData);
 }
 
-// The gray convertion and it's NEON optimization is copied from http://hilbert-space.de/?p=22
+// The gray convertion and its NEON optimization is copied from http://hilbert-space.de/?p=22
 
 void WindowsPhoneRuntimeComponent::ConvertToGrayOriginal( Platform::WriteOnlyArray<int,1U>^ frameData)
 {
