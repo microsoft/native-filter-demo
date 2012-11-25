@@ -1,6 +1,6 @@
-﻿using NativeCam.Resources;
+﻿using NativeFilterDemo.Resources;
 
-namespace NativeCam
+namespace NativeFilterDemo
 {
     /// <summary>
     /// Provides access to string resources.

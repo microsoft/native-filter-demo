@@ -1,12 +1,12 @@
 ﻿<phone:PhoneApplicationPage
-    x:Class="NativeCam.MainPage"
+    x:Class="NativeFilterDemo.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
     xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:local="clr-namespace:NativeCam"
+    xmlns:local="clr-namespace:NativeFilterDemo"
     mc:Ignorable="d"
     FontFamily="{StaticResource PhoneFontFamilyNormal}"
     FontSize="{StaticResource PhoneFontSizeNormal}"
@@ -62,9 +62,10 @@
                     <VideoBrush x:Name="ViewfinderBrush" />
                 </Rectangle.Fill>
             </Rectangle>
-            <Image x:Name="FilteredViewfinder" Grid.Column="1" Canvas.ZIndex="1"
-                   HorizontalAlignment="Center"   VerticalAlignment="Stretch" Margin="5,0,5,5"
-                   Source="/Assets/AlignmentGrid.png" Width="Auto" />
+            <MediaElement x:Name="MyCameraMediaElement"
+                            Grid.Row="0" Grid.Column="0"
+                            IsHitTestVisible="False"
+                            Margin="4" Width="640" Height="480" Grid.ColumnSpan="2" />
         </Grid>
 
 
