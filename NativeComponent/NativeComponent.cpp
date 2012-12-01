@@ -3,7 +3,9 @@
 #include "pch.h"
 #include <windows.h>
 #include "NativeComponent.h"
+#if defined(_M_ARM)
 #include <arm_neon.h>
+#endif
 
 using namespace NativeComponent;
 using namespace Platform;
@@ -24,22 +26,34 @@ void WindowsPhoneRuntimeComponent::Initialize(Windows::Phone::Media::Capture::Ph
 
 }
 
-void WindowsPhoneRuntimeComponent::NewViewfinderFrame( Platform::WriteOnlyArray<int,1U>^ frameData)
+
+void WindowsPhoneRuntimeComponent::NewViewfinderFrame( Platform::WriteOnlyArray<int,1U>^ inputBuffer,
+													  Platform::WriteOnlyArray<uint8,1U>^ outputBuffer)
 {
-	m_camera->GetPreviewBufferArgb(frameData);
-	//ConvertToGrayOriginal(&m_frameBuffer);
-	ConvertToGrayNeon(frameData);
+	m_camera->GetPreviewBufferArgb(inputBuffer);
+	#if defined(_M_ARM)
+	ConvertToGrayNeon(inputBuffer,outputBuffer );
+	#else
+	ConvertToGrayOriginal(inputBuffer, outputBuffer);
+	#endif
+
+	
 }
+
 
 // The gray convertion and its NEON optimization is copied from http://hilbert-space.de/?p=22
 
-void WindowsPhoneRuntimeComponent::ConvertToGrayOriginal( Platform::WriteOnlyArray<int,1U>^ frameData)
+void WindowsPhoneRuntimeComponent::ConvertToGrayOriginal( Platform::WriteOnlyArray<int,1U>^ inputBuffer,
+														  Platform::WriteOnlyArray<uint8,1U>^ outputBuffer)
+{	uint8 * src = (uint8 *) inputBuffer->Data;
+	uint8 * dest = (uint8 *) outputBuffer->Data;
+	ConvertToGrayOriginal(src, dest, inputBuffer->Length);
+}
+
+void WindowsPhoneRuntimeComponent::ConvertToGrayOriginal( uint8 * src, uint8* dest, int length)
 {
-	uint8 * src = (uint8 *) frameData->Data;
-	uint8 * dest = (uint8 *) frameData->Data;
-	int n = frameData->Length;
 	int i;
-	for (i=0; i<n; i++)
+	for (i=0; i<length; i++)
 	{
 		int r = *src++; // load red
 		int g = *src++; // load green
@@ -54,20 +68,21 @@ void WindowsPhoneRuntimeComponent::ConvertToGrayOriginal( Platform::WriteOnlyArr
 		*dest++ = (y>>8);
 		*dest++ = (y>>8);
 		*dest++ = (y>>8);
-		dest++;
+		*dest++ = 0xFF;
 
 	}
 }
 
 // The same function, but implemented with Neon intrinsic. 
 // For a good introduction to NEON: http://www.stanford.edu/class/ee282/10_handouts/lect.10.arm_soc.pdf
-
-void WindowsPhoneRuntimeComponent::ConvertToGrayNeon( Platform::WriteOnlyArray<int,1U>^ frameData)
+#if defined(_M_ARM)
+void WindowsPhoneRuntimeComponent::ConvertToGrayNeon( Platform::WriteOnlyArray<int,1U>^ inputBuffer,
+													  Platform::WriteOnlyArray<uint8,1U>^ outputBuffer)
 {
-	uint8 * src = (uint8 *) frameData->Data;
-	uint8 * dest = (uint8 *) frameData->Data;
+	uint8 * src = (uint8 *) inputBuffer->Data;
+	uint8 * dest = (uint8 *) outputBuffer->Data;
 
-	int n = frameData->Length;
+	int n = inputBuffer->Length;
 
 	uint8x8_t rfac = vdup_n_u8 (77);
 	uint8x8_t gfac = vdup_n_u8 (151);
@@ -95,3 +110,5 @@ void WindowsPhoneRuntimeComponent::ConvertToGrayNeon( Platform::WriteOnlyArray<i
 		dest += 8*4;
 	}
 } 
+
+#endif

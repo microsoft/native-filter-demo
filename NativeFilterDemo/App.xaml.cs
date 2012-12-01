@@ -6,9 +6,9 @@ using System.Windows.Markup;
 using System.Windows.Navigation;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
-using NativeCam.Resources;
+using NativeFilterDemo.Resources;
 
-namespace NativeCam
+namespace NativeFilterDemo
 {
     public partial class App : Application
     {

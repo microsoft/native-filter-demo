@@ -8,22 +8,24 @@ using System.Windows.Controls;
 using System.Windows.Navigation;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
-using NativeCam.Resources;
+using NativeFilterDemo.Resources;
 using NativeComponent;
 using Microsoft.Devices;
 using Windows.Phone.Media.Capture;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using System.Threading;
 
 
-namespace NativeCam
+namespace NativeFilterDemo
 {
     public partial class MainPage : PhoneApplicationPage
     {
         PhotoCaptureDevice m_camera;
-        WriteableBitmap m_wb;
         WindowsPhoneRuntimeComponent m_nativeFilter;
-        bool m_processingFrame;
-        int[] m_frameData;
+    
+        DateTime m_startTime;
+        DispatcherTimer m_timer;
 
         // Constructor
         public MainPage()
@@ -36,35 +38,31 @@ namespace NativeCam
         {
             Windows.Foundation.Size resolution = new Windows.Foundation.Size(640, 480);
             m_camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, resolution);
-            m_frameData = new int[(int)m_camera.PreviewResolution.Height * (int)m_camera.PreviewResolution.Width];
+
+            Windows.Foundation.Size actualResolution = m_camera.PreviewResolution;
             ViewfinderBrush.SetSource(m_camera);
-
-            m_camera.PreviewFrameAvailable += m_camera_PreviewFrameAvailable;
-
-            m_wb = new WriteableBitmap((int)m_camera.PreviewResolution.Width, (int)m_camera.PreviewResolution.Height);
-            this.FilteredViewfinder.Source = m_wb;
-            m_processingFrame = false;
 
             m_nativeFilter = new WindowsPhoneRuntimeComponent();
             m_nativeFilter.Initialize(m_camera);
+
+            CameraStreamSource source = new CameraStreamSource(m_nativeFilter, actualResolution);
+            MyCameraMediaElement.SetSource (source);
+
+            m_startTime = DateTime.Now;
+            m_timer = new DispatcherTimer();
+            m_timer.Interval = new TimeSpan(0, 0, 0, 1, 0); // Tick every 1s.
+            m_timer.Tick += m_timer_Tick;
+            m_timer.Start();
+
         }
 
-        void m_camera_PreviewFrameAvailable(ICameraCaptureDevice sender, object args)
+
+        void m_timer_Tick(object sender, EventArgs e)
         {
-
-            if (m_nativeFilter == null) return;
-            if (m_processingFrame) return;
-            m_processingFrame = true;
-            m_nativeFilter.NewViewfinderFrame(m_frameData);
-            Deployment.Current.Dispatcher.BeginInvoke(delegate()
-            {
-                // Copy to WriteableBitmap.
-                m_frameData.CopyTo(m_wb.Pixels, 0);
-                m_wb.Invalidate();
-                m_processingFrame = false;
-            });
-
+            System.Diagnostics.Debug.WriteLine("FPS:" + MyCameraMediaElement.RenderedFramesPerSecond );
         }
+
+        
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -74,5 +72,9 @@ namespace NativeCam
             }
         }
 
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+                base.OnNavigatedFrom(e);
+        }
     }
 }
