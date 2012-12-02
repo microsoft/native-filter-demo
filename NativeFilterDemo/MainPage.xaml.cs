@@ -15,6 +15,7 @@ using Windows.Phone.Media.Capture;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Threading;
+using Microsoft.Phone;
 
 
 namespace NativeFilterDemo
@@ -36,6 +37,7 @@ namespace NativeFilterDemo
 
         async void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
+            Microsoft.Phone.Shell.PhoneApplicationService.Current.ApplicationIdleDetectionMode = IdleDetectionMode.Disabled;
             Windows.Foundation.Size resolution = new Windows.Foundation.Size(640, 480);
             m_camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, resolution);
 
@@ -74,6 +76,7 @@ namespace NativeFilterDemo
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine("OnNavigatedFrom");
                 base.OnNavigatedFrom(e);
         }
     }

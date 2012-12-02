@@ -73,6 +73,7 @@ namespace NativeFilterDemo
 
         protected override void GetSampleAsync(MediaStreamType mediaStreamType)
         {
+            System.Diagnostics.Debug.WriteLine("GetSampleAsync in");
             if (_frameStreamOffset + _frameBufferSize > _frameStreamSize)
             {
                 _frameStream.Seek(0, SeekOrigin.Begin);
@@ -91,6 +92,7 @@ namespace NativeFilterDemo
             _currentTime += _frameTime;
             _frameStreamOffset += _frameBufferSize;
 
+            System.Diagnostics.Debug.WriteLine("GetSampleAsync out");
         }
 
         protected override void CloseMedia()
