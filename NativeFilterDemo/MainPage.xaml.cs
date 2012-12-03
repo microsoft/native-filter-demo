@@ -42,7 +42,12 @@ namespace NativeFilterDemo
             m_camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, resolution);
 
             Windows.Foundation.Size actualResolution = m_camera.PreviewResolution;
-            ViewfinderBrush.SetSource(m_camera);
+            
+            // The viewfinderbrush (preview of the original data from camera)
+            // is currently very unstable on the device, when used together
+            // with a MediaEngine playback component.
+            
+			//ViewfinderBrush.SetSource(m_camera);
 
             m_nativeFilter = new WindowsPhoneRuntimeComponent();
             m_nativeFilter.Initialize(m_camera);
