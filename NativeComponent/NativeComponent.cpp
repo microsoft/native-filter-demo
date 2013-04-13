@@ -1,8 +1,9 @@
 ﻿// NativeComponent.cpp
 
 #include "pch.h"
+#include <client.h>
 #include <windows.h>
-#include "NativeComponent.h"
+#include <robuffer.h>
 #if defined(_M_ARM)
 #include <arm_neon.h>
 #endif
@@ -10,44 +11,75 @@
 using namespace NativeComponent;
 using namespace Platform;
 using namespace Windows::Phone::Media::Capture;
+using namespace Windows::Foundation;
+using namespace Windows::Storage::Streams;
+using namespace Microsoft::WRL;
 
 WindowsPhoneRuntimeComponent::WindowsPhoneRuntimeComponent()
 {
-
 }
 
-
-void WindowsPhoneRuntimeComponent::Initialize(Windows::Phone::Media::Capture::PhotoCaptureDevice^ captureDevice)
+void WindowsPhoneRuntimeComponent::CaptureDevice::set (PhotoCaptureDevice^ device)
 {
-	m_camera = captureDevice;
-	Windows::Foundation::Size viewfinderResolution = m_camera->PreviewResolution;
-
-	m_processingFrame = false;
-
+	m_camera = device;
+	Windows::Foundation::Size cameraFrameResolution = device->PreviewResolution;
+	int numberOfPixels = int(cameraFrameResolution.Width) * int (cameraFrameResolution.Height);
+	m_cameraPreviewBuffer = ref new Array<int>(numberOfPixels);
 }
 
-
-void WindowsPhoneRuntimeComponent::NewViewfinderFrame( Platform::WriteOnlyArray<int,1U>^ inputBuffer,
-													  Platform::WriteOnlyArray<uint8,1U>^ outputBuffer)
+void WindowsPhoneRuntimeComponent::OutputBuffer::set (Windows::Storage::Streams::IBuffer^ outputBuffer)
 {
-	m_camera->GetPreviewBufferArgb(inputBuffer);
-	#if defined(_M_ARM)
-	ConvertToGrayNeon(inputBuffer,outputBuffer );
-	#else
-	ConvertToGrayOriginal(inputBuffer, outputBuffer);
-	#endif
-
-	
+	// Com magic to retrieve the pointer to the pixel buffer.
+	Object^ obj = outputBuffer;
+	ComPtr<IInspectable> insp(reinterpret_cast<IInspectable*>(obj));
+	ComPtr<IBufferByteAccess> bufferByteAccess;
+	ThrowIfFailed(insp.As(&bufferByteAccess));
+	m_pixelsBuffer = nullptr;
+	ThrowIfFailed(bufferByteAccess->Buffer(&m_pixelsBuffer));
 }
 
+void WindowsPhoneRuntimeComponent::OutputBufferSize::set (Windows::Foundation::Size bufferSize)
+{
+	m_outputBufferSize = bufferSize;
+}
+
+IAsyncAction^ WindowsPhoneRuntimeComponent::GetNewFrameAndApplyEffect()
+{
+	return concurrency::create_async([this](){
+
+		m_camera->GetPreviewBufferArgb(m_cameraPreviewBuffer);
+
+#if defined(_M_ARM)
+		ConvertToGrayNeon(m_cameraPreviewBuffer,m_pixelsBuffer);
+#else
+		ConvertToGrayOriginal(m_cameraPreviewBuffer,m_pixelsBuffer);
+#endif
+
+	});
+}
+
+void WindowsPhoneRuntimeComponent::ChangeEffectType()
+{
+}
 
 // The gray convertion and its NEON optimization is copied from http://hilbert-space.de/?p=22
 
 void WindowsPhoneRuntimeComponent::ConvertToGrayOriginal( Platform::WriteOnlyArray<int,1U>^ inputBuffer,
-														  Platform::WriteOnlyArray<uint8,1U>^ outputBuffer)
-{	uint8 * src = (uint8 *) inputBuffer->Data;
-	uint8 * dest = (uint8 *) outputBuffer->Data;
+														 byte * outputBuffer)
+{	
+	uint8 * src = (uint8 *) inputBuffer->Data;
+	uint8 * dest = (uint8 *) outputBuffer;
 	ConvertToGrayOriginal(src, dest, inputBuffer->Length);
+}
+
+
+inline void WindowsPhoneRuntimeComponent::ThrowIfFailed(HRESULT hr)
+{
+	if (FAILED(hr))
+	{
+		// Set a breakpoint on this line to catch Win32 API errors.
+		throw Platform::Exception::CreateException(hr);
+	}
 }
 
 void WindowsPhoneRuntimeComponent::ConvertToGrayOriginal( uint8 * src, uint8* dest, int length)
@@ -77,10 +109,10 @@ void WindowsPhoneRuntimeComponent::ConvertToGrayOriginal( uint8 * src, uint8* de
 // For a good introduction to NEON: http://www.stanford.edu/class/ee282/10_handouts/lect.10.arm_soc.pdf
 #if defined(_M_ARM)
 void WindowsPhoneRuntimeComponent::ConvertToGrayNeon( Platform::WriteOnlyArray<int,1U>^ inputBuffer,
-													  Platform::WriteOnlyArray<uint8,1U>^ outputBuffer)
+													 byte * outputBuffer)
 {
 	uint8 * src = (uint8 *) inputBuffer->Data;
-	uint8 * dest = (uint8 *) outputBuffer->Data;
+	uint8 * dest = (uint8 *) outputBuffer;
 
 	int n = inputBuffer->Length;
 
@@ -88,7 +120,7 @@ void WindowsPhoneRuntimeComponent::ConvertToGrayNeon( Platform::WriteOnlyArray<i
 	uint8x8_t gfac = vdup_n_u8 (151);
 	uint8x8_t bfac = vdup_n_u8 (28);
 	n/=8;
-	
+
 	uint8x8x4_t interleaved;
 	interleaved.val[3] = vdup_n_u8 (0xFF); //Alpha value
 

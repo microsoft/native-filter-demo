@@ -7,11 +7,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="NativeComponent.cpp" />
-    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="ICameraEffect.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="NativeComponent.h" />
-    <ClInclude Include="pch.h" />
+    <ClInclude Include="ICameraEffect.h" />
   </ItemGroup>
 </Project>

@@ -1,88 +1,98 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
+using System;
 using System.Linq;
-using System.Net;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Controls;
 using System.Windows.Navigation;
+using System.Windows.Threading;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
-using NativeFilterDemo.Resources;
-using NativeComponent;
-using Microsoft.Devices;
 using Windows.Phone.Media.Capture;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
-using System.Threading;
-using Microsoft.Phone;
-
+using Size = Windows.Foundation.Size;
+using System.Diagnostics;
+using CameraEffectInterface;
+using NativeComponent;
 
 namespace NativeFilterDemo
 {
     public partial class MainPage : PhoneApplicationPage
     {
-        PhotoCaptureDevice m_camera;
-        WindowsPhoneRuntimeComponent m_nativeFilter;
-    
-        DateTime m_startTime;
-        DispatcherTimer m_timer;
+        private PhotoCaptureDevice m_camera;
+        private readonly ICameraEffect cameraEffect;
+        private CameraStreamSource source;
+        private DispatcherTimer m_timer;
 
         // Constructor
         public MainPage()
         {
             InitializeComponent();
+            cameraEffect = new WindowsPhoneRuntimeComponent();
+            BuildApplicationBar();
+        }
+
+        private void BuildApplicationBar()
+        {
+            ApplicationBar = new ApplicationBar();
+
+            ApplicationBarIconButton button = new ApplicationBarIconButton(new Uri("/Assets/Icons/next.png", UriKind.Relative));
+            button.Text = "Second page";
+            button.Click += SecondPageButtonClick;
+            ApplicationBar.Buttons.Add(button);
             Loaded += MainPage_Loaded;
         }
 
-        async void MainPage_Loaded(object sender, RoutedEventArgs e)
+        async void MainPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
         {
-            Microsoft.Phone.Shell.PhoneApplicationService.Current.ApplicationIdleDetectionMode = IdleDetectionMode.Disabled;
-            Windows.Foundation.Size resolution = new Windows.Foundation.Size(640, 480);
-            m_camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, resolution);
+            Size targetMediaElementSize = new Size(640, 480);
+            double aspectRatio = 4.0/3.0;
 
-            Windows.Foundation.Size actualResolution = m_camera.PreviewResolution;
-            
-            // The viewfinderbrush (preview of the original data from camera)
-            // is currently very unstable on the device, when used together
-            // with a MediaEngine playback component.
-            
-			//ViewfinderBrush.SetSource(m_camera);
+            // 1. Open camera 
+            if (m_camera == null)
+            {
+                var captureRes = PhotoCaptureDevice.GetAvailableCaptureResolutions(CameraSensorLocation.Back);
+                Size selectedCaptureRes = captureRes.Where(res => Math.Abs(aspectRatio - res.Width/res.Height ) <= 0.1)
+                                                    .OrderBy(res => res.Width)
+                                                    .Last();
+                m_camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, selectedCaptureRes);
+                m_camera.SetProperty(KnownCameraGeneralProperties.EncodeWithOrientation, m_camera.SensorLocation == CameraSensorLocation.Back ? m_camera.SensorRotationInDegrees : -m_camera.SensorRotationInDegrees);
+               
+                var previewRes = PhotoCaptureDevice.GetAvailablePreviewResolutions(CameraSensorLocation.Back);
+                Size selectedPreviewRes = previewRes.Where(res => Math.Abs(aspectRatio - res.Width/res.Height ) <= 0.1) 
+                                                    .Where(res => (res.Height >= targetMediaElementSize.Height) && (res.Width >= targetMediaElementSize.Width))
+                                                    .OrderBy(res => res.Width)
+                                                    .First();
+                await m_camera.SetPreviewResolutionAsync(selectedPreviewRes);
+                cameraEffect.CaptureDevice = m_camera;
+            }
 
-            m_nativeFilter = new WindowsPhoneRuntimeComponent();
-            m_nativeFilter.Initialize(m_camera);
+            // Always create a new source, otherwise the MediaElement will not start.
+            source = new CameraStreamSource(cameraEffect, targetMediaElementSize);
+            MyCameraMediaElement.SetSource(source);
 
-            CameraStreamSource source = new CameraStreamSource(m_nativeFilter, actualResolution);
-            MyCameraMediaElement.SetSource (source);
-
-            m_startTime = DateTime.Now;
             m_timer = new DispatcherTimer();
             m_timer.Interval = new TimeSpan(0, 0, 0, 1, 0); // Tick every 1s.
             m_timer.Tick += m_timer_Tick;
             m_timer.Start();
-
         }
-
 
         void m_timer_Tick(object sender, EventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine("FPS:" + MyCameraMediaElement.RenderedFramesPerSecond );
+            System.Diagnostics.Debug.WriteLine("FPS 2:" + MyCameraMediaElement.RenderedFramesPerSecond);
         }
 
-        
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        private void SecondPageButtonClick(object sender, EventArgs e)
         {
-            if (m_camera != null)
+            if (m_camera == null) return;
+
+            MyCameraMediaElement.Source = null;
+            NavigationService.Navigate(new Uri("/SecondPage.xaml", UriKind.Relative));
+
+        }
+
+        private void MyCameraMediaElement_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            if (cameraEffect != null)
             {
-                ViewfinderBrush.SetSource(m_camera);
+                cameraEffect.ChangeEffectType();
             }
-        }
-
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            System.Diagnostics.Debug.WriteLine("OnNavigatedFrom");
-                base.OnNavigatedFrom(e);
         }
     }
 }

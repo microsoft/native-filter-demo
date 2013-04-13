@@ -19,11 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{eccd1443-9eaa-4666-bc16-6aa5b5c11ba2}</ProjectGuid>
-    <RootNamespace>NativeComponent</RootNamespace>
+    <ProjectGuid>{b54d292c-6154-413f-9c4c-d4a08cdb7edf}</ProjectGuid>
+    <RootNamespace>CameraEffectInterface</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>11.0</MinimumVisualStudioVersion>
     <WinMDAssembly>true</WinMDAssembly>
+    <ProjectName>CameraEffectInterface</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -89,7 +90,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
       <PreprocessorDefinitions>_WINRT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalUsingDirectories>$(WindowsSDK_MetadataPath);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
       <CompileAsWinRT>true</CompileAsWinRT>
@@ -123,19 +124,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="NativeComponent.h" />
-    <ClInclude Include="pch.h" />
+    <ClInclude Include="ICameraEffect.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="NativeComponent.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CameraEffectInterface\CameraEffectInterface.vcxproj">
-      <Project>{b54d292c-6154-413f-9c4c-d4a08cdb7edf}</Project>
-    </ProjectReference>
+    <ClCompile Include="ICameraEffect.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsPhone\v$(TargetPlatformVersion)\Microsoft.Cpp.WindowsPhone.$(TargetPlatformVersion).targets" />
