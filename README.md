@@ -21,4 +21,4 @@ http://developer.nokia.com/Community/Wiki/Real-time_camera_viewfinder_filters_in
 
 ---
 
-*Copyright (c) 2013 Nokia Corporation. All rights reserved.*
+*Copyright (c) 2013-2014 Microsoft Mobile. All rights reserved.*
