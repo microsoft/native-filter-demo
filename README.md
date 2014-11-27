@@ -5,7 +5,7 @@ A simple demonstration project for Windows Phone 8 describing a way to create
 real-time filters for the camera viewfinder, using native code (C++). The
 project also provides a sample filter optimized using the NEON instruction set.
 
-![Screenshot](https://github.com/nokia-developer/native-filter-demo/raw/master/nfd_screenshot.png)
+![Screenshot](https://github.com/Microsoft/native-filter-demo/raw/master/nfd_screenshot.png)
 
 One of the big new features of Windows Phone 8 SDK is the support for C and C++,
 also known as native code support. This is a small demo app that shows how one
